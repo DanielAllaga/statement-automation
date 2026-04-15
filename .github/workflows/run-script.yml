@@ -33,6 +33,9 @@ jobs:
           echo "TESSERACT_PATH=/usr/bin/tesseract" >> $GITHUB_ENV
           echo "POPPLER_PATH=/usr/bin" >> $GITHUB_ENV
 
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
+
       - name: Run script
         env:
           FULL_NAME: ${{ secrets.FULL_NAME }}
