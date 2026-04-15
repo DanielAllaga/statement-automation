@@ -48,4 +48,4 @@ jobs:
           GEN_AI_API_KEY: ${{ secrets.GEN_AI_API_KEY }}
           GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
         run: |
-          python main.py
+          python core/statement_automation.py
