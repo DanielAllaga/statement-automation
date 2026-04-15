@@ -5,7 +5,7 @@ import os
 import base64
 from googleapiclient.discovery import build
 
-from email_module.email_sender import GmailSender
+from services.email_module.email_sender import GmailSender
 
 SCOPES = [
     'https://www.googleapis.com/auth/gmail.modify',
