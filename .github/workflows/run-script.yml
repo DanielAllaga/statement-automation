@@ -1,0 +1,51 @@
+name: Run Credit Card Automation
+
+on:
+  schedule:
+    - cron: "0 16 * * *"  # 12:00 AM Philippines
+  workflow_dispatch:
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr poppler-utils
+
+      - name: Set Tesseract & Poppler paths
+        run: |
+          echo "TESSERACT_PATH=/usr/bin/tesseract" >> $GITHUB_ENV
+          echo "POPPLER_PATH=/usr/bin" >> $GITHUB_ENV
+
+      - name: Run script
+        env:
+          FULL_NAME: ${{ secrets.FULL_NAME }}
+          USER_ADDRESS: ${{ secrets.USER_ADDRESS }}
+          PASSWORD_MAYA: ${{ secrets.PASSWORD_MAYA }}
+          PASSWORD_JCB: ${{ secrets.PASSWORD_JCB }}
+          PASSWORD_FLEX: ${{ secrets.PASSWORD_FLEX }}
+          PASSWORD_BDO: ${{ secrets.PASSWORD_BDO }}
+          PASSWORD_BPI: ${{ secrets.PASSWORD_BPI }}
+          TARGET_EMAIL: ${{ secrets.TARGET_EMAIL }}
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          GEN_AI_API_KEY: ${{ secrets.GEN_AI_API_KEY }}
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+        run: |
+          python main.py

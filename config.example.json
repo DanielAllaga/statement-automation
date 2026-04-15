@@ -1,0 +1,11 @@
+{
+  "google_user_id": "me",
+  "calendar_id": "primary",
+  "gmail_label_query": "label:\"credit card statements\" has:attachment filename:pdf",
+  "gemini_model_name": "gemini-2.0-flash",
+  "pdf_password_lookup": {
+    "Chase": "your-password-here",
+    "Citi": "your-password-here",
+    "Amex": "your-password-here"
+  }
+}
