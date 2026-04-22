@@ -1,3 +1,5 @@
+from typing import Any
+
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -60,6 +62,21 @@ class EmailService:
         results = service.users().messages().list(userId='me', q=f'label:"{SOURCE_LABEL}"').execute()
         messages = results.get('messages', [])
 
+        # Added functionality to get email subject
+        msg = service.users().messages().get(
+            userId='me',
+            id=messages[0]['id'],
+            format='metadata',  # or 'full'
+            metadataHeaders=['Subject']
+        ).execute()
+
+        headers = msg['payload']['headers']
+
+        email_subject = next(
+            (h['value'] for h in headers if h['name'] == 'Subject'),
+            None
+        )
+
         if not messages:
             print(f"📭 No new messages in '{SOURCE_LABEL}'.")
             sender = GmailSender()
@@ -98,7 +115,7 @@ class EmailService:
         if pdf_path_process_statement:
             print(f"✅ Downloaded: {pdf_path_process_statement}")
 
-            return pdf_path_process_statement
+            return pdf_path_process_statement, email_subject
 
         return None
 
@@ -109,7 +126,7 @@ class EmailService:
                 return label['id']
         return None
 
-    def fetch_latest_pdf(self) -> str | None:
+    def fetch_latest_pdf(self) -> tuple[str | None, str | None]:
         """
         Authenticate, connect to Gmail, and fetch the latest PDF from SOURCE_LABEL.
         Returns the local PDF path if successful, else None.
@@ -119,14 +136,14 @@ class EmailService:
         gmail_service = build('gmail', 'v1', credentials=creds)
 
         # 2️⃣ Process the latest statement
-        pdf_path = self.process_statement(service=gmail_service)
+        pdf_path, email_subject = self.process_statement(service=gmail_service)
 
         if pdf_path:
             print(f"📄 Latest PDF ready: {pdf_path}")
         else:
             print("📭 No PDF found.")
 
-        return pdf_path
+        return pdf_path, email_subject
 
     def move_email_to_processed_statements(self):
         creds = self.authenticate()

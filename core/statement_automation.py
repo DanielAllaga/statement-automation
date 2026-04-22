@@ -8,14 +8,13 @@ from pathlib import Path
 def run():
     # Workflow 1: Access the email_module and download the attached pdf file
     email_service = EmailService()
-    pdf_path = email_service.fetch_latest_pdf()
+    pdf_path, email_subject = email_service.fetch_latest_pdf()
 
     # Workflow 2: Parse the pdf in the attachment folder
     project_root = Path(__file__).resolve().parent
     pdf_processor = PDFProcessor(project_root)
-    pdf_processor_result = pdf_processor.run(pdf_path)
+    pdf_processor_result = pdf_processor.run(email_subject, pdf_path)
 
-    print(pdf_processor_result)
     # Workflow 3: Send the redacted text to Gemini for text analysis
     gemini_ai_parser = GeminiAIParser()
     gemini_ai_parser_result = gemini_ai_parser.run(pdf_processor_result)

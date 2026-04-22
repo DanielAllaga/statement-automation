@@ -27,6 +27,8 @@ PASSWORD_MAP: Dict[str, Optional[str]] = {
     "flex": os.getenv("PASSWORD_FLEX"),
     "bdo": os.getenv("PASSWORD_BDO"),
     "bpi": os.getenv("PASSWORD_BPI"),
+    "metrobank": os.getenv("PASSWORD_METROBANK"),
+    "ub": os.getenv("PASSWORD_UB"),
 }
 
 
@@ -38,8 +40,9 @@ class PDFProcessor:
         self.decrypted_dir = self.project_dir / "data" / "decrypted"
         self.decrypted_dir.mkdir(parents=True, exist_ok=True)
 
+
     # ---- Public Method ----
-    def run(self, pdf_path: Path = None) -> List[str]:
+    def run(self, email_subject, pdf_path: Path = None) -> List[str]:
 
         if pdf_path and isinstance(pdf_path, str):
             pdf_path = Path(pdf_path)
@@ -54,7 +57,7 @@ class PDFProcessor:
 
         for pdf in pdf_files:
             try:
-                password = self.get_password(pdf.name)
+                password = self.get_password(pdf.name, email_subject)
 
                 decrypted_pdf = self.decrypt_pdf_if_needed(
                     pdf,
@@ -62,7 +65,7 @@ class PDFProcessor:
                     self.decrypted_dir
                 )
 
-                raw_text = self.extract_pdf_text(decrypted_pdf)
+                raw_text = self.extract_pdf_text(decrypted_pdf, email_subject)
                 redacted_text = self.sanitize_text(raw_text)
 
                 print(f"\n✅ Processed: {pdf.name}")
@@ -107,11 +110,15 @@ class PDFProcessor:
 
         return "\n".join(results)
 
-    def extract_pdf_text(self, pdf_path: Path) -> str:
+    def extract_pdf_text(self, pdf_path: Path, email_subject: str) -> str:
 
         if "BPI" in str(pdf_path):
             # Custom logic for BPI Credit Card Statement
             # To not include transaction history - limit of 8000 indexes applied
+            extracted_text = self.ocr_pdf(str(pdf_path))
+            return extracted_text[:8000]
+
+        if "metrobank" in email_subject.lower():
             extracted_text = self.ocr_pdf(str(pdf_path))
             return extracted_text[:8000]
 
@@ -153,16 +160,31 @@ class PDFProcessor:
 
         return decrypted_path
 
-    def get_password(self, filename: str) -> Optional[str]:
+    def get_password(self, filename: str, email_subject: str) -> Optional[str]:
         filename_lower = filename.lower()
+        email_subject_lower = email_subject.lower()
+        pdf_password = ""
 
+        # To get the password based on its filename
         for key, password in PASSWORD_MAP.items():
             if key in filename_lower:
-                return password
+                pdf_password = password
+                return pdf_password
+
+        # To get the password based on its email subject
+        if not pdf_password:
+            for key, password in PASSWORD_MAP.items():
+                if key in email_subject_lower:
+                    pdf_password = password
+                    return pdf_password
 
         return None
 
     def redact_sensitive_information(self, text: str) -> str:
+
+        # 🔹 Pattern 0: Masked card numbers like 4404-53**-****-8376
+        pattern_masked_card = r'\b\d{4}-[\d\*]{4}-[\d\*]{4}-\d{4}\b'
+
         # 🔹 Pattern 1: Standard card formats (with spaces or dashes)
         pattern_cards = r'\b(?:\d{4}[- ]?){3}\d{4}\b'
 
@@ -190,16 +212,26 @@ class PDFProcessor:
         # 🔹 Pattern 9: Remove BPI credit limit
         pattern_credit_limit = r'CREDIT\s+LIMIT[:\s]*[\d,]+\.\d{2}'
 
+        # 🔹 Pattern 10: Remove UB credit limit
+        ub_credit_limit = r'Credit\s*Limit\s*:\s*(?:PHP|₱)\s*[\d,]+\.\d{2}'
+
+        # 🔹 Pattern 11: Masked name + trailing digits (MB use case)
+        pattern_masked_name_digits = r'\b[A-Z][A-Z\*\™]+\s+[A-Z]+\s+\d{2}\s+\d{4}\b'
+
         # ✅ Apply redactions (order matters)
+        text = re.sub(pattern_masked_card, '[REDACTED]', text)
         text = re.sub(pattern_cards, '[REDACTED]', text)
         text = re.sub(pattern_prefixed_numbers, '[REDACTED]', text)
         text = re.sub(pattern_long_numbers, '[REDACTED]', text)
-        text = re.sub(pattern_dashed_numbers, '[REDACTED LATEST]', text)
+        text = re.sub(pattern_dashed_numbers, '[REDACTED]', text)
         text = re.sub(pattern_limit, '[REDACTED]', text, flags=re.IGNORECASE)
         text = re.sub(pattern_points, '[REDACTED]', text, flags=re.IGNORECASE)
         text = re.sub(pattern_customer_number, '[REDACTED]', text, flags=re.IGNORECASE)
-        text = re.sub(pattern_reference_no, '[REDACTED REF NO]', text, flags=re.IGNORECASE)
-        text = re.sub(pattern_credit_limit, '[REDACTED CREDIT LIMIT]', text, flags=re.IGNORECASE)
+        text = re.sub(pattern_reference_no, '[REDACTED]', text, flags=re.IGNORECASE)
+        text = re.sub(pattern_credit_limit, '[REDACTED]', text, flags=re.IGNORECASE)
+        text = re.sub(ub_credit_limit, '[REDACTED]', text, flags=re.IGNORECASE)
+        text = re.sub(pattern_masked_name_digits, '[REDACTED]', text)
+
 
         return text
 
