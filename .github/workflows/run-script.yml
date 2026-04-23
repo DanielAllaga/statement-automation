@@ -58,5 +58,7 @@ jobs:
           GEN_AI_API_KEY: ${{ secrets.GEN_AI_API_KEY }}
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
           GOOGLE_TOKEN_JSON: ${{ secrets.GOOGLE_TOKEN_JSON }}
+          PASSWORD_METROBANK: ${{ secrets.PASSWORD_METROBANK }}
+          PASSWORD_UB: ${{ secrets.PASSWORD_UB }}
         run: |
           python core/statement_automation.py
