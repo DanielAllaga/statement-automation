@@ -1,4 +1,4 @@
-# Credit Card Statement Automation
+## Statement Reader Automation
 
 This project downloads credit card statement PDFs from Gmail, decrypts them with a password map, redacts sensitive numbers, sends the redacted text to Gemini for JSON extraction, and creates Google Calendar reminders 5 days before the due date.
 
