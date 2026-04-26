@@ -62,6 +62,20 @@ class EmailService:
         results = service.users().messages().list(userId='me', q=f'label:"{SOURCE_LABEL}"').execute()
         messages = results.get('messages', [])
 
+        if not messages:
+            print(f"📭 No new messages in '{SOURCE_LABEL}'.")
+            sender = GmailSender()
+            sender.send_message(
+                recipient=os.getenv("TARGET_EMAIL"),
+                message=(
+                    f"No new messages found in '{SOURCE_LABEL}'. "
+                    f"Execution completed successfully."
+                ),
+                subject="[Notification] Credit Card Payment Reminder"
+            )
+
+            return None, None
+
         # Added functionality to get email subject
         msg = service.users().messages().get(
             userId='me',
@@ -76,20 +90,6 @@ class EmailService:
             (h['value'] for h in headers if h['name'] == 'Subject'),
             None
         )
-
-        if not messages:
-            print(f"📭 No new messages in '{SOURCE_LABEL}'.")
-            sender = GmailSender()
-            sender.send_message(
-                recipient=os.getenv("TARGET_EMAIL"),
-                message=(
-                    f"No new messages found in '{SOURCE_LABEL}'. "
-                    f"Execution completed successfully."
-                ),
-                subject="[Notification] Credit Card Payment Reminder"
-            )
-
-            return None
 
         msg_id = messages[0]['id']
         message = service.users().messages().get(userId='me', id=msg_id).execute()
@@ -117,7 +117,7 @@ class EmailService:
 
             return pdf_path_process_statement, email_subject
 
-        return None
+        return None, None
 
     def get_label_id(self, service, label_name):
         results = service.users().labels().list(userId='me').execute()
@@ -140,10 +140,10 @@ class EmailService:
 
         if pdf_path:
             print(f"📄 Latest PDF ready: {pdf_path}")
+            return pdf_path, email_subject
         else:
             print("📭 No PDF found.")
-
-        return pdf_path, email_subject
+            return None, None
 
     def move_email_to_processed_statements(self):
         creds = self.authenticate()
