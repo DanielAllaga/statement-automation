@@ -25,13 +25,13 @@ class GeminiAIParser:
                 
                 Rules:
                 1. Return ONLY a valid JSON object with exactly these keys:
-                   {
+                   {{
                      "due_date": "",
                      "total_balance": "",
                      "credit_card_type": "",
                      "minimum_amount": "",
                      "bank_name": ""
-                   }
+                   }}
                 
                 2. If a value cannot be found, use null.
                 
