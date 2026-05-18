@@ -66,7 +66,7 @@ class PDFProcessor:
                 )
 
                 raw_text = self.extract_pdf_text(decrypted_pdf, email_subject)
-                redacted_text = self.sanitize_text(raw_text)
+                redacted_text = self.sanitize_text(raw_text, email_subject)
 
                 print(f"\n✅ Processed: {pdf.name}")
                 redacted_text_list.append(redacted_text)
@@ -116,7 +116,7 @@ class PDFProcessor:
             # Custom logic for BPI Credit Card Statement
             # To not include transaction history - limit of 8000 indexes applied
             extracted_text = self.ocr_pdf(str(pdf_path))
-            return extracted_text[:8000]
+            return extracted_text[9500:]
 
         if "metrobank" in email_subject.lower():
             extracted_text = self.ocr_pdf(str(pdf_path))
@@ -180,7 +180,7 @@ class PDFProcessor:
 
         return None
 
-    def redact_sensitive_information(self, text: str) -> str:
+    def redact_sensitive_information(self, text: str, email_subject: str) -> str:
 
         # 🔹 Pattern 0: Masked card numbers like 4404-53**-****-8376
         pattern_masked_card = r'\b\d{4}-[\d\*]{4}-[\d\*]{4}-\d{4}\b'
@@ -223,15 +223,17 @@ class PDFProcessor:
         text = re.sub(pattern_cards, '[REDACTED]', text)
         text = re.sub(pattern_prefixed_numbers, '[REDACTED]', text)
         text = re.sub(pattern_long_numbers, '[REDACTED]', text)
-        text = re.sub(pattern_dashed_numbers, '[REDACTED]', text)
         text = re.sub(pattern_limit, '[REDACTED]', text, flags=re.IGNORECASE)
         text = re.sub(pattern_points, '[REDACTED]', text, flags=re.IGNORECASE)
         text = re.sub(pattern_customer_number, '[REDACTED]', text, flags=re.IGNORECASE)
+        text = re.sub(pattern_dashed_numbers, '[REDACTED]', text)
         text = re.sub(pattern_reference_no, '[REDACTED]', text, flags=re.IGNORECASE)
         text = re.sub(pattern_credit_limit, '[REDACTED]', text, flags=re.IGNORECASE)
         text = re.sub(ub_credit_limit, '[REDACTED]', text, flags=re.IGNORECASE)
-        text = re.sub(pattern_masked_name_digits, '[REDACTED]', text)
 
+        # Skip this regex for BPI statements because it removes the payment due date
+        if "BPI" not in email_subject:
+            text = re.sub(pattern_masked_name_digits, '[REDACTED]', text)
 
         return text
 
@@ -248,8 +250,8 @@ class PDFProcessor:
         return text
 
     # 🔹 Main sanitizer
-    def sanitize_text(self, text: str) -> str:
-        text = self.redact_sensitive_information(text)
+    def sanitize_text(self, text: str, email_subject: str) -> str:
+        text = self.redact_sensitive_information(text, email_subject)
 
         name_keywords = self.get_keywords(FULL_NAME)
         address_keywords = self.get_keywords(USER_ADDRESS)
