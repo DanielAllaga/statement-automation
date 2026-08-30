@@ -2,7 +2,7 @@
 from services.calendar_module.calendar_api import CalendarAPI
 from services.email_module.email_reader import EmailService
 from services.pdf_processor.extract_pdf import PDFProcessor
-from services.ai_module.gemini_ai_parser import GeminiAIParser
+from services.ai_module.open_router_ai_parser import OpenRouterAIParser
 from pathlib import Path
 
 def run():
@@ -16,7 +16,7 @@ def run():
     pdf_processor_result = pdf_processor.run(email_subject, pdf_path)
 
     # Workflow 3: Send the redacted text to Gemini for text analysis
-    gemini_ai_parser = GeminiAIParser()
+    gemini_ai_parser = OpenRouterAIParser()
     gemini_ai_parser_result = gemini_ai_parser.run(pdf_processor_result)
 
     # Workflow 4: Google Calendar API

@@ -7,5 +7,7 @@ config.json
 data/
 .idea/
 *.iml
+.venv
+.gitignore
 
 
