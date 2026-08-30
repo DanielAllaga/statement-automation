@@ -86,6 +86,16 @@ class CalendarAPI:
 
             else:
                 print("⚠️ No due date found. Skipping calendar event creation.")
+                sender = GmailSender()
+                sender.send_message(
+                    recipient=os.getenv("TARGET_EMAIL"),
+                    message=(
+                        f"Event failed to create for {bank_name} with ({card_type}). "
+                        f"No due date found. Skipping calendar event creation."
+                    ),
+                    subject = "[FAILED] Credit Card Payment Notification"
+                )
+
 
     def convert_date_readable_format(self, date_str: str) -> str:
 
