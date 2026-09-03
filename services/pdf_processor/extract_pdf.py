@@ -116,7 +116,7 @@ class PDFProcessor:
             # Custom logic for BPI Credit Card Statement
             # To not include transaction history - limit of 8000 indexes applied
             extracted_text = self.ocr_pdf(str(pdf_path))
-            return extracted_text[9500:]
+            return extracted_text[:9500]
 
         if "metrobank" in email_subject.lower():
             extracted_text = self.ocr_pdf(str(pdf_path))
